@@ -371,42 +371,53 @@ const CivilAviationSafetyNavigator = () => {
 
   // Main component render
   return (
-    <div 
-      className="relative min-h-screen bg-gray-950 text-white overflow-x-hidden"
-      role="application"
-      aria-label="Civil Aviation Safety Navigator Application"
-    >
-      {renderParticles()}
-      {renderHeader()}
-      <main 
-        className="relative z-10 pt-8 pb-4 max-w-7xl mx-auto min-h-[80vh] px-4 sm:px-6 lg:px-8"
-        role="main"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {isTransitioning ? (
-          <div className="sr-only" role="status" aria-live="polite">
-            Loading content, please wait...
-          </div>
-        ) : null}
-        {renderCurrentScreen()}
-      </main>
-      <ChatSidebar
-        open={isChatOpen}
-        onClose={() => {
-          setIsChatOpen(false);
-          // Return focus to the chat toggle button when closing
-          const chatToggle = document.getElementById('chat-toggle-button');
-          if (chatToggle) {
-            setTimeout(() => chatToggle.focus(), 0);
-          }
-        }}
-        messages={chatMessages}
-        input={chatInput}
-        setInput={setChatInput}
-        onSubmit={handleChatSubmit}
-        isTyping={isTyping}
+    <div className="relative min-h-screen">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/casn.png')" }}
+        aria-hidden="true"
       />
+
+      {/* Subtle dark overlay for text contrast (tweak opacity as you like) */}
+      <div className="absolute inset-0 -z-10 bg-black/55 backdrop-blur-[1px]" aria-hidden="true" />
+
+      {/* Existing UI */}
+      <div
+        className="relative min-h-screen text-white overflow-x-hidden"
+        role="application"
+        aria-label="Civil Aviation Safety Navigator Application"
+      >
+        {renderParticles()}
+        {renderHeader()}
+        <main
+          className="relative z-10 pt-8 pb-4 max-w-7xl mx-auto min-h-[80vh] px-4 sm:px-6 lg:px-8"
+          role="main"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {isTransitioning ? (
+            <div className="sr-only" role="status" aria-live="polite">
+              Loading content, please wait...
+            </div>
+          ) : null}
+          {renderCurrentScreen()}
+        </main>
+
+        <ChatSidebar
+          open={isChatOpen}
+          onClose={() => {
+            setIsChatOpen(false);
+            const chatToggle = document.getElementById('chat-toggle-button');
+            if (chatToggle) setTimeout(() => chatToggle.focus(), 0);
+          }}
+          messages={chatMessages}
+          input={chatInput}
+          setInput={setChatInput}
+          onSubmit={handleChatSubmit}
+          isTyping={isTyping}
+        />
+      </div>
     </div>
   );
 }
