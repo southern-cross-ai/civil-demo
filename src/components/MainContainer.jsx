@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Plane, Users, Wrench, ClipboardCheck, MessageSquare, ArrowLeft, Search, Settings } from 'lucide-react';
 import RoleSelectionScreen from './RoleSelectionScreen';
 import ChatSidebar from './ChatSidebar';
+import PilotDashboard from './PilotDashboard';
+import CabinCrewDashboard from './CabinCrewDashboard';
 
 // Placeholder fallback components
-const PilotDashboard = (props) => <div className="text-center py-20 text-gray-400">Pilot Dashboard (待实现)</div>;
-const CabinCrewDashboard = (props) => <div className="text-center py-20 text-gray-400">Cabin Crew Dashboard (待实现)</div>;
 const MaintenanceDashboard = (props) => <div className="text-center py-20 text-gray-400">Maintenance Dashboard (待实现)</div>;
 const SafetyDashboard = (props) => <div className="text-center py-20 text-gray-400">Safety Officer Dashboard (待实现)</div>;
 const ComplianceDashboard = (props) => <div className="text-center py-20 text-gray-400">Compliance Dashboard (待实现)</div>;
@@ -71,6 +71,7 @@ const CivilAviationSafetyNavigator = () => {
 
       if (options.role) setSelectedRole(options.role);
       if (options.searchQuery) setSearchQuery(options.searchQuery);
+      if (options.query) setSearchQuery(options.query); // accept alias from callers
       if (options.documentId) setDocumentId(options.documentId);
       
       setTimeout(() => {
@@ -175,7 +176,7 @@ const CivilAviationSafetyNavigator = () => {
               <div className="flex-shrink-0 flex items-center">
                 <Plane className="h-8 w-8 text-blue-400" />
                 <span className="ml-2 text-xl font-semibold text-white">
-                  {role ? `${role.title} Dashboard` : 'Aviation Safety Navigator'}
+                  {role?.title ? `${role.title} Dashboard` : 'Aviation Safety Navigator'}
                 </span>
               </div>
             </div>
@@ -193,7 +194,7 @@ const CivilAviationSafetyNavigator = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && searchQuery.trim()) {
-                      navigationAPI.navigateToScreen('search-results', { query: searchQuery });
+                      navigationAPI.navigateToScreen('search-results', { searchQuery });
                     }
                   }}
                   aria-label="Search aviation documents"
@@ -287,15 +288,31 @@ const CivilAviationSafetyNavigator = () => {
       case 'role-selection':
         return (
           <RoleSelectionScreen 
-            roles={Object.values(roles)} 
+            roles={roles}
             onRoleSelect={handleRoleSelect}
             onChatOpen={() => setIsChatOpen(true)}
           />
         );
       case 'pilot-dashboard':
-        return <PilotDashboard role={getCurrentRole()} />;
+        return (
+          <PilotDashboard
+            role={getCurrentRole()}
+            onNavigate={navigationAPI}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isTransitioning={isTransitioning}
+          />
+        );
       case 'cabin-crew-dashboard':
-        return <CabinCrewDashboard role={getCurrentRole()} />;
+        return (
+          <CabinCrewDashboard
+            role={getCurrentRole()}
+            onNavigate={navigationAPI}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isTransitioning={isTransitioning}
+          />
+        );
       case 'maintenance-dashboard':
         return <MaintenanceDashboard role={getCurrentRole()} />;
       case 'safety-dashboard':
