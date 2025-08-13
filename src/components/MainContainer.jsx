@@ -8,6 +8,7 @@ import SafetyOfficerDashboard from './SafetyOfficerDashboard';
 import ComplianceStaffDashboard from './ComplianceStaffDashboard';
 import SearchResultsView from './SearchResultsView';
 import DocumentDetailPage from './DocumentDetailPage';
+import MaintenanceTechnicianDashboard from './MaintenanceTechnician'; // 只新增这一行
 
 // Placeholder fallback components
 const MaintenanceDashboard = (props) => <div className="text-center py-20 text-gray-400">Maintenance Dashboard </div>;
@@ -314,7 +315,16 @@ const CivilAviationSafetyNavigator = () => {
           />
         );
       case 'maintenance-dashboard':
-        return <MaintenanceDashboard role={getCurrentRole()} />;
+        // 只改这一处
+        return (
+          <MaintenanceTechnicianDashboard
+            role={getCurrentRole()}
+            onNavigate={navigationAPI}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isTransitioning={isTransitioning}
+          />
+        );
       case 'safety-dashboard':
         return (
           <SafetyOfficerDashboard
