@@ -4,13 +4,13 @@ import RoleSelectionScreen from './RoleSelectionScreen';
 import ChatSidebar from './ChatSidebar';
 import PilotDashboard from './PilotDashboard';
 import CabinCrewDashboard from './CabinCrewDashboard';
+import SafetyOfficerDashboard from './SafetyOfficerDashboard';
+import ComplianceStaffDashboard from './ComplianceStaffDashboard';
+import SearchResultsView from './SearchResultsView';
+import DocumentDetailPage from './DocumentDetailPage';
 
 // Placeholder fallback components
-const MaintenanceDashboard = (props) => <div className="text-center py-20 text-gray-400">Maintenance Dashboard (待实现)</div>;
-const SafetyDashboard = (props) => <div className="text-center py-20 text-gray-400">Safety Officer Dashboard (待实现)</div>;
-const ComplianceDashboard = (props) => <div className="text-center py-20 text-gray-400">Compliance Dashboard (待实现)</div>;
-const SearchResultsView = (props) => <div className="text-center py-20 text-gray-400">Search Results View (待实现)</div>;
-const DocumentDetailPage = (props) => <div className="text-center py-20 text-gray-400">Document Detail Page (待实现)</div>;
+const MaintenanceDashboard = (props) => <div className="text-center py-20 text-gray-400">Maintenance Dashboard </div>;
 const CivilAviationSafetyNavigator = () => { 
   // Core navigation state 
   const [currentScreen, setCurrentScreen] = useState('role-selection'); 
@@ -316,13 +316,44 @@ const CivilAviationSafetyNavigator = () => {
       case 'maintenance-dashboard':
         return <MaintenanceDashboard role={getCurrentRole()} />;
       case 'safety-dashboard':
-        return <SafetyDashboard role={getCurrentRole()} />;
+        return (
+          <SafetyOfficerDashboard
+            role={getCurrentRole()}
+            onNavigate={navigationAPI}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isTransitioning={isTransitioning}
+          />
+        );
       case 'compliance-dashboard':
-        return <ComplianceDashboard role={getCurrentRole()} />;
+        return (
+          <ComplianceStaffDashboard
+            role={getCurrentRole()}
+            onNavigate={navigationAPI}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isTransitioning={isTransitioning}
+          />
+        );
       case 'search-results':
-        return <SearchResultsView query={searchQuery} />;
+        return (
+          <SearchResultsView
+            role={getCurrentRole()}
+            onNavigate={navigationAPI}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isTransitioning={isTransitioning}
+          />
+        );
       case 'document-detail':
-        return <DocumentDetailPage documentId={documentId} />;
+        return (
+          <DocumentDetailPage
+            role={getCurrentRole()}
+            onNavigate={navigationAPI}
+            documentId={documentId}
+            isTransitioning={isTransitioning}
+          />
+        );
       default:
         return <div className="text-center py-20 text-gray-400">Screen not found</div>;
     }
