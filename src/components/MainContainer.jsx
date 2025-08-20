@@ -9,7 +9,12 @@ import SafetyOfficerDashboard from './SafetyOfficerDashboard';
 import ComplianceStaffDashboard from './ComplianceStaffDashboard';
 import SearchResultsView from './SearchResultsView';
 import DocumentDetailPage from './DocumentDetailPage';
-import MaintenanceTechnicianDashboard from './MaintenanceTechnician'; 
+import MaintenanceTechnicianDashboard from './MaintenanceTechnician';
+import ThemeToggle from './ThemeToggle';
+import QuickActions from './QuickActions';
+import SystemStatus from './SystemStatus';
+import RecentDocuments from './RecentDocuments';
+import KeyboardShortcuts from './KeyboardShortcuts'; 
 
 // Placeholder fallback components
 const MaintenanceDashboard = (props) => <div className="text-center py-20 text-gray-400">Maintenance Dashboard </div>;
@@ -124,6 +129,81 @@ const CivilAviationSafetyNavigator = () => {
     { content: "According to CAAP 253-02, pilots must say the following in pre-flight safety briefings: location of emergency exits, operation of seat belts, location and use of life jackets, oxygen mask procedures, and smoking restrictions.", citations: ['CAAP 253-02', 'Section 4.2', 'CAO 20.16.3'] }, 
     { content: "Exit row passengers must be briefed on their responsibilities and demonstrate physical capability to operate emergency exits according to passenger safety guidelines.", citations: ['CAAP 253-02', 'AC 121-24', 'Part 121.571'] } 
   ];
+
+  // Handle new feature actions
+  const handleQuickAction = (actionId) => {
+    switch (actionId) {
+      case 'search':
+        navigationAPI.navigateToScreen('search-results');
+        break;
+      case 'chat':
+        setIsChatOpen(true);
+        break;
+      case 'recent':
+        // Recent documents will be handled by the component itself
+        break;
+      case 'favorites':
+        // Favorites will be handled by the component itself
+        break;
+      case 'checklist':
+        // Navigate to pilot checklist
+        if (selectedRole === 'pilot') {
+          navigationAPI.navigateToScreen('pilot-dashboard');
+        }
+        break;
+      case 'procedures':
+        // Navigate to emergency procedures
+        if (selectedRole === 'pilot') {
+          navigationAPI.navigateToScreen('pilot-dashboard');
+        }
+        break;
+      default:
+        console.log('Quick action:', actionId);
+    }
+  };
+
+  const handleShortcut = (shortcut) => {
+    switch (shortcut) {
+      case 'quick-search':
+        navigationAPI.navigateToScreen('search-results');
+        break;
+      case 'open-chat':
+        setIsChatOpen(true);
+        break;
+      case 'recent-docs':
+        // Recent documents will be handled by the component itself
+        break;
+      case 'quick-actions':
+        // Quick actions will be handled by the component itself
+        break;
+      case 'system-status':
+        // System status will be handled by the component itself
+        break;
+      case 'toggle-theme':
+        // Theme toggle will be handled by the component itself
+        break;
+      case 'navigate-back':
+        navigationAPI.goBack();
+        break;
+      case 'home':
+        navigationAPI.navigateToScreen('role-selection');
+        break;
+      case 'fullscreen':
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
+        }
+        break;
+      default:
+        console.log('Shortcut:', shortcut);
+    }
+  };
+
+  const handleDocumentOpen = (doc) => {
+    // Navigate to document detail page
+    navigationAPI.navigateToDocument(doc.id);
+  };
 
   const handleChatSubmit = () => { 
     if (!chatInput.trim()) return;
@@ -273,6 +353,13 @@ const CivilAviationSafetyNavigator = () => {
               >
                 <MessageSquare className="h-5 w-5" />
               </motion.button>
+              
+              {/* New feature buttons */}
+              <ThemeToggle onThemeChange={setCurrentTheme} />
+              <QuickActions onAction={handleQuickAction} role={getCurrentRole()} />
+              <SystemStatus />
+              <RecentDocuments onDocumentOpen={handleDocumentOpen} role={getCurrentRole()} />
+              <KeyboardShortcuts onShortcut={handleShortcut} />
               
               <motion.button 
                 whileHover={{ scale: 1.1 }}
@@ -464,6 +551,9 @@ const CivilAviationSafetyNavigator = () => {
     { id: 1, type: 'info', message: 'Welcome to Aviation Safety Navigator', read: false, timestamp: Date.now() - 3600000 }
   ]);
   const [showNotifications, setShowNotifications] = useState(false);
+  
+  // Add new feature states
+  const [currentTheme, setCurrentTheme] = useState('dark');
 
   // Initialize particles effect - single source of truth for particles animation
   useEffect(() => { 
@@ -512,7 +602,7 @@ const CivilAviationSafetyNavigator = () => {
           />
         );
       case 'maintenance-dashboard':
-        // 只改这一处
+        // Only change this place
         return (
           <MaintenanceTechnicianDashboard
             role={getCurrentRole()}
