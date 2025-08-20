@@ -1,33 +1,235 @@
-import React, { useState } from "react";
-import { MessageSquare } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { MessageSquare, ChevronRight, Zap, Shield, Users, FileText, Search, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+/**
+ * Loading State Component
+ * Shows an animated loading state when a role is being selected
+ */
+const LoadingState = ({ role }) => {
+  const roleInfo = roleIcons[role?.id] || roleIcons.default;
+  
+  return (
+    <motion.div 
+      className="fixed inset-0 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-sm z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <motion.div 
+        className="relative"
+        animate={{
+          scale: [1, 1.1, 1],
+          rotate: [0, 10, -10, 0]
+        }}
+        transition={{ 
+          duration: 1.5, 
+          repeat: Infinity, 
+          repeatType: 'reverse' 
+        }}
+      >
+        <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl"></div>
+        <div 
+          className="relative z-10 w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg"
+          aria-hidden="true"
+        >
+          {React.cloneElement(roleInfo.icon, { className: 'h-8 w-8 text-white' })}
+        </div>
+      </motion.div>
+      
+      <motion.div
+        className="mt-8 text-center"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <h2 className="text-2xl font-bold text-white mb-2">
+          Loading {role?.title || roleInfo.label} Interface
+        </h2>
+        <p className="text-gray-300 max-w-md">
+          Preparing your personalized aviation safety dashboard with relevant tools and information...
+        </p>
+      </motion.div>
+      
+      <motion.div 
+        className="mt-8 w-48 h-1.5 bg-gray-700 rounded-full overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <motion.div 
+          className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full"
+          initial={{ width: '0%' }}
+          animate={{ width: '100%' }}
+          transition={{ 
+            duration: 2, 
+            repeat: Infinity, 
+            repeatType: 'reverse',
+            ease: 'easeInOut'
+          }}
+        />
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// Animation variants for role cards
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      type: 'spring',
+      stiffness: 200,
+      damping: 20
+    }
+  }),
+  hover: {
+    y: -5,
+    transition: { type: 'spring', stiffness: 300, damping: 10 }
+  },
+  tap: { scale: 0.98 }
+};
+
+// Role icons mapping with aria-labels for accessibility
+const roleIcons = {
+  pilot: { 
+    icon: <Zap className="h-5 w-5" aria-hidden="true" />,
+    label: 'Pilot'
+  },
+  atc: { 
+    icon: <MessageSquare className="h-5 w-5" aria-hidden="true" />,
+    label: 'Air Traffic Controller'
+  },
+  technician: { 
+    icon: <Shield className="h-5 w-5" aria-hidden="true" />,
+    label: 'Aircraft Technician'
+  },
+  crew: { 
+    icon: <Users className="h-5 w-5" aria-hidden="true" />,
+    label: 'Cabin Crew'
+  },
+  default: { 
+    icon: <FileText className="h-5 w-5" aria-hidden="true" />,
+    label: 'Role'
+  }
+};
 
 /**
  * Role Selection Screen Component
- *
- * Props:
- * - onRoleSelect: function(roleId) - Called when user selects a role
- * - roles: object - Role definitions from main container
- * - isTransitioning: boolean - Whether screen is transitioning
- * - onChatOpen: function - Callback to open the chat sidebar
+ * 
+ * @param {Object} props - Component props
+ * @param {Object} props.roles - Object containing role definitions
+ * @param {Function} props.onSelectRole - Callback when a role is selected
+ * @param {Function} props.onChatOpen - Callback to open the chat sidebar
  */
-const RoleSelectionScreen = ({ onRoleSelect, roles, isTransitioning, onChatOpen }) => {
-  const [selectedRoleForTransition, setSelectedRoleForTransition] = useState(null);
+const RoleSelectionScreen = ({ 
+  roles = {}, 
+  onSelectRole = () => {}, 
+  onChatOpen = () => {} 
+}) => {
+  // State management
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showWelcome, setShowWelcome] = useState(true);
   const [hoveredRole, setHoveredRole] = useState(null);
+  const [selectedRoleForTransition, setSelectedRoleForTransition] = useState(null);
+  
+  // Get roles as array and filter based on search term
+  const roleEntries = Object.entries(roles);
+  
+  const filteredRoles = React.useMemo(() => {
+    if (!searchTerm.trim()) return roleEntries;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return roleEntries.filter(([_, role]) => {
+      return (
+        role.title.toLowerCase().includes(searchLower) ||
+        role.description.toLowerCase().includes(searchLower) ||
+        (role.tags || []).some(tag => tag.toLowerCase().includes(searchLower))
+      );
+    });
+  }, [searchTerm, roleEntries]);
 
-  const handleRoleSelect = (roleId) => {
+  // Auto-dismiss welcome message after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWelcome(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  /**
+   * Handle role selection with smooth transition
+   * @param {string} roleId - The ID of the selected role
+   * @param {Object} role - The complete role object
+   */
+  const handleRoleSelect = React.useCallback((roleId, role) => {
+    setSelectedRole(role);
     setSelectedRoleForTransition(roleId);
-    // Show loading state for 1 second, then navigate
-    setTimeout(() => {
-      onRoleSelect(roleId);
-      setSelectedRoleForTransition(null);
-    }, 1000);
-  };
+    setIsTransitioning(true);
+    
+    // Disable body scroll during transition
+    document.body.style.overflow = 'hidden';
+    
+    // Allow animation to complete before triggering parent callback
+    const transitionTimeout = setTimeout(() => {
+      onSelectRole(roleId);
+      // Re-enable scrolling after parent has handled the transition
+      document.body.style.overflow = '';
+    }, 800);
+    
+    return () => clearTimeout(transitionTimeout);
+  }, [onSelectRole]);
 
-  // Convert roles object to array for rendering
-  const roleList = Object.entries(roles).map(([key, role]) => ({
-    ...role,
-    key,
-  }));
+  if (isTransitioning) {
+    return (
+      <motion.div 
+        className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-gray-900 to-gray-800"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div 
+          className="relative"
+          animate={{
+            scale: [1, 1.1, 1],
+            rotate: [0, 10, -10, 0]
+          }}
+          transition={{ 
+            duration: 1.5, 
+            repeat: Infinity, 
+            repeatType: 'reverse' 
+          }}
+        >
+          <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl"></div>
+          <div className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
+            {roleIcons[selectedRole?.id] || roleIcons.default}
+          </div>
+        </motion.div>
+        <motion.p 
+          className="mt-6 text-lg font-medium text-gray-200"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          Loading {selectedRole?.title} view...
+        </motion.p>
+        <motion.p 
+          className="mt-2 text-sm text-gray-400 max-w-xs text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.7 }}
+          transition={{ delay: 0.4 }}
+        >
+          Preparing your personalized aviation safety interface
+        </motion.p>
+      </motion.div>
+    );
+  }
 
   return (
     <div 
@@ -79,20 +281,20 @@ const RoleSelectionScreen = ({ onRoleSelect, roles, isTransitioning, onChatOpen 
 
         {/* Role Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {roleList.map((role) => {
-            const isSelected = selectedRoleForTransition === role.key;
-            const isHovered = hoveredRole === role.key;
+          {filteredRoles.map(([roleKey, role]) => {
+            const isSelected = selectedRoleForTransition === roleKey;
+            const isHovered = hoveredRole === roleKey;
 
             return (
               <div
-                key={role.key}
-                onClick={() => handleRoleSelect(role.key)}
-                onMouseEnter={() => setHoveredRole(role.key)}
+                key={roleKey}
+                onClick={() => handleRoleSelect(roleKey, role)}
+                onMouseEnter={() => setHoveredRole(roleKey)}
                 onMouseLeave={() => setHoveredRole(null)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    handleRoleSelect(role.key);
+                    handleRoleSelect(roleKey, role);
                   }
                 }}
                 role="button"

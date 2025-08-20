@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, Plane, Users, Wrench, ClipboardCheck, MessageSquare, ArrowLeft, Search, Settings } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Shield, Plane, Users, Wrench, ClipboardCheck, MessageSquare, ArrowLeft, Search, Settings, Bell, HelpCircle, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import RoleSelectionScreen from './RoleSelectionScreen';
 import ChatSidebar from './ChatSidebar';
 import PilotDashboard from './PilotDashboard';
@@ -156,40 +157,74 @@ const CivilAviationSafetyNavigator = () => {
 
 
 
-  // Render header component
+  // Render header component with enhanced UI
   const renderHeader = () => {
     const role = getCurrentRole();
+    const unreadCount = notifications.filter(n => !n.read).length;
     
     return (
-      <header className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-50">
+      <motion.header 
+        className="bg-gray-900/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50 shadow-xl"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
               {currentScreen !== 'role-selection' && (
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={navigationAPI.goBack}
-                  className="mr-4 p-1 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500"
+                  className="mr-4 p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500 transition-all duration-200"
                   aria-label="Go back"
                 >
                   <ArrowLeft className="h-5 w-5" />
-                </button>
+                </motion.button>
               )}
               <div className="flex-shrink-0 flex items-center">
-                <Plane className="h-8 w-8 text-blue-400" />
-                <span className="ml-2 text-xl font-semibold text-white">
-                  {role?.title ? `${role.title} Dashboard` : 'Aviation Safety Navigator'}
-                </span>
+                <motion.div 
+                  animate={{ 
+                    rotate: [0, 10, -10, 0],
+                    y: [0, -5, 0]
+                  }}
+                  transition={{ 
+                    duration: 3,
+                    repeat: Infinity,
+                    repeatType: 'reverse'
+                  }}
+                >
+                  <Plane className="h-8 w-8 text-blue-400" />
+                </motion.div>
+                <motion.span 
+                  className="ml-2 text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {role?.title ? (
+                    <>
+                      <span className="text-white">{role.title} </span>
+                      <span className="text-blue-400">Dashboard</span>
+                    </>
+                  ) : 'Aviation Safety Navigator'}
+                </motion.span>
               </div>
             </div>
             
             <div className="flex-1 max-w-2xl px-4">
-              <div className="relative">
+              <motion.div 
+                className="relative"
+                whileHover={{ scale: 1.01 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+              >
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="text"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-700 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-700 rounded-xl bg-gray-800/80 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm transition-all duration-200"
                   placeholder="Search regulations, procedures..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -200,73 +235,235 @@ const CivilAviationSafetyNavigator = () => {
                   }}
                   aria-label="Search aviation documents"
                 />
-              </div>
+              </motion.div>
             </div>
             
-            <div className="flex items-center">
-              <button
+            <div className="flex items-center space-x-2">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500 transition-all duration-200"
+                aria-label="Notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <motion.span 
+                    className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                  >
+                    {unreadCount}
+                  </motion.span>
+                )}
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setIsChatOpen(!isChatOpen)}
-                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500"
+                className={`p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500 transition-all duration-200 ${
+                  isChatOpen 
+                    ? 'text-blue-400 bg-blue-500/20' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/80'
+                }`}
                 aria-label="Open chat"
                 id="chat-toggle-button"
               >
                 <MessageSquare className="h-5 w-5" />
-              </button>
-              <button 
-                className="ml-4 p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500"
-                aria-label="Settings"
+              </motion.button>
+              
+              <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500 transition-all duration-200"
+                aria-label="Help and support"
               >
-                <Settings className="h-5 w-5" />
-              </button>
+                <HelpCircle className="h-5 w-5" />
+              </motion.button>
             </div>
           </div>
         </div>
-      </header>
+        
+        {/* Notifications panel */}
+        <AnimatePresence>
+          {showNotifications && (
+            <motion.div 
+              className="absolute right-4 mt-2 w-80 bg-gray-800/95 backdrop-blur-lg rounded-xl shadow-2xl border border-gray-700 overflow-hidden"
+              initial={{ opacity: 0, y: -20, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -20, height: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            >
+              <div className="p-3 border-b border-gray-700 bg-gray-800/80">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-white">Notifications</h3>
+                  <button 
+                    onClick={() => setShowNotifications(false)}
+                    className="text-gray-400 hover:text-white"
+                    aria-label="Close notifications"
+                  >
+                    &times;
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                {notifications.length > 0 ? (
+                  notifications.map(notification => (
+                    <div 
+                      key={notification.id} 
+                      className={`p-3 border-b border-gray-700/50 hover:bg-gray-700/50 transition-colors ${
+                        !notification.read ? 'bg-blue-500/10' : ''
+                      }`}
+                    >
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 pt-0.5">
+                          <Zap className={`h-4 w-4 ${
+                            notification.type === 'alert' ? 'text-red-400' : 'text-blue-400'
+                          }`} />
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-gray-200">{notification.message}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(notification.timestamp).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-400 text-sm">
+                    No new notifications
+                  </div>
+                )}
+              </div>
+              {notifications.length > 0 && (
+                <div className="p-2 text-center border-t border-gray-700">
+                  <button 
+                    onClick={() => {
+                      setNotifications(notifications.map(n => ({ ...n, read: true })));
+                    }}
+                    className="text-xs text-blue-400 hover:text-blue-300"
+                  >
+                    Mark all as read
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.header>
     );
   };
 
-  // Render particles background
+  // Enhanced particles background with interactive elements
   const renderParticles = () => {
     return (
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        {/* Gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"></div>
-        {[...Array(20)].map((_, i) => (
+        
+        {/* Animated grid lines */}
+        <div className="absolute inset-0 opacity-5">
           <div 
-            key={i}
-            className="absolute rounded-full bg-blue-500/20"
+            className="absolute inset-0"
             style={{
-              width: Math.random() * 4 + 1 + 'px',
-              height: Math.random() * 4 + 1 + 'px',
-              left: Math.random() * 100 + '%',
-              top: Math.random() * 100 + '%',
-              animation: `float ${Math.random() * 20 + 10}s linear infinite`,
-              animationDelay: Math.random() * 5 + 's',
-              opacity: Math.random() * 0.5 + 0.1
+              backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.2\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M0 40L40 0H20L0 20M40 40V20L20 40\'/%3E%3C/g%3E%3C/svg%3E")',
+              backgroundSize: '40px 40px'
+            }}
+          />
+        </div>
+        
+        {/* Floating particles */}
+        {particles.map((particle) => (
+          <motion.div
+            key={particle.id}
+            className={`absolute ${
+              particle.shape === 'circle' ? 'rounded-full' : 'rounded-sm'
+            }`}
+            style={{
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              left: `${particle.x}%`,
+              top: `${particle.y}%`,
+              opacity: particle.opacity,
+              backgroundColor: particle.color,
+              rotate: particle.rotation,
+              boxShadow: `0 0 ${particle.size * 2}px ${particle.size * 0.5}px ${particle.color}40`
+            }}
+            animate={{
+              y: [0, -10, 0],
+              x: [0, Math.sin(Date.now() * 0.001 + particle.id * 10) * 10, 0],
+              rotate: particle.rotation + 360
+            }}
+            transition={{
+              y: {
+                duration: 5 + Math.random() * 10,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                repeatType: 'reverse'
+              },
+              x: {
+                duration: 8 + Math.random() * 15,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                repeatType: 'reverse'
+              },
+              rotate: {
+                duration: 100 + Math.random() * 200,
+                repeat: Infinity,
+                ease: 'linear'
+              }
             }}
           />
         ))}
-        <style jsx>{`
-          @keyframes float {
-            0% { transform: translateY(0) translateX(0); }
-            100% { transform: translateY(-100vh) translateX(20px); }
-          }
-        `}</style>
+        
+        {/* Glow effects */}
+        <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-gray-900/80" />
+        
+        {/* Subtle noise texture */}
+        <div className="absolute inset-0 opacity-10 mix-blend-overlay" style={{
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\' /%3E%3C/filter%3E%3Crect width=\'100%\' height=\'100%\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")'
+        }} />
+        
+        {/* Pulsing glow */}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent"
+          animate={{
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            repeatType: 'reverse',
+            ease: 'easeInOut'
+          }}
+        />
       </div>
     );
   };
 
-  // State for particles animation
+  // Enhanced particles state with more variety
   const [particles, setParticles] = useState(
-    Array.from({ length: 15 }, (_, i) => ({
+    Array.from({ length: 30 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 2 + 1,
-      speed: Math.random() * 0.2 + 0.1,
-      opacity: Math.random() * 0.3 + 0.1,
-      color: Math.random() > 0.5 ? 'cyan' : 'blue'
+      size: Math.random() * 3 + 1,
+      speed: Math.random() * 0.3 + 0.1,
+      opacity: Math.random() * 0.4 + 0.1,
+      color: ['cyan', 'blue', 'indigo', 'sky'][Math.floor(Math.random() * 4)],
+      shape: Math.random() > 0.7 ? 'circle' : 'square',
+      rotation: Math.random() * 360
     }))
   );
+  
+  // Add notification state
+  const [notifications, setNotifications] = useState([
+    { id: 1, type: 'info', message: 'Welcome to Aviation Safety Navigator', read: false, timestamp: Date.now() - 3600000 }
+  ]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Initialize particles effect - single source of truth for particles animation
   useEffect(() => { 
