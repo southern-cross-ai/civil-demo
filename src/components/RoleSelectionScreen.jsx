@@ -34,7 +34,10 @@ const LoadingState = ({ role }) => {
           className="relative z-10 w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg"
           aria-hidden="true"
         >
-          {React.cloneElement(roleInfo.icon, { className: 'h-8 w-8 text-white' })}
+          {roleInfo && React.isValidElement(roleInfo.icon)
+            ? React.cloneElement(roleInfo.icon, { className: 'h-8 w-8 text-white' })
+            : <Users className="h-8 w-8 text-white" />
+          }
         </div>
       </motion.div>
       
@@ -132,12 +135,9 @@ const RoleSelectionScreen = ({
   onChatOpen = () => {} 
 }) => {
   // State management
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showWelcome, setShowWelcome] = useState(true);
   const [hoveredRole, setHoveredRole] = useState(null);
-  const [selectedRoleForTransition, setSelectedRoleForTransition] = useState(null);
   
   // Get roles as array and filter based on search term
   const roleEntries = Object.entries(roles);
@@ -164,79 +164,19 @@ const RoleSelectionScreen = ({
   }, []);
 
   /**
-   * Handle role selection with smooth transition
+   * Handle role selection - directly navigate to dashboard
    * @param {string} roleId - The ID of the selected role
    * @param {Object} role - The complete role object
    */
-  const handleRoleSelect = React.useCallback((roleId, role) => {
-    setSelectedRole(role);
-    setSelectedRoleForTransition(roleId);
-    setIsTransitioning(true);
-    
-    // Disable body scroll during transition
-    document.body.style.overflow = 'hidden';
-    
-    // Allow animation to complete before triggering parent callback
-    const transitionTimeout = setTimeout(() => {
-      onSelectRole(roleId);
-      // Re-enable scrolling after parent has handled the transition
-      document.body.style.overflow = '';
-    }, 800);
-    
-    return () => clearTimeout(transitionTimeout);
+  const handleRoleSelect = React.useCallback((roleId) => {
+    // Directly call parent navigation without loading state
+    onSelectRole(roleId);
   }, [onSelectRole]);
 
-  if (isTransitioning) {
-    return (
-      <motion.div 
-        className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-gray-900 to-gray-800"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        <motion.div 
-          className="relative"
-          animate={{
-            scale: [1, 1.1, 1],
-            rotate: [0, 10, -10, 0]
-          }}
-          transition={{ 
-            duration: 1.5, 
-            repeat: Infinity, 
-            repeatType: 'reverse' 
-          }}
-        >
-          <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl"></div>
-          <div className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-            {roleIcons[selectedRole?.id] || roleIcons.default}
-          </div>
-        </motion.div>
-        <motion.p 
-          className="mt-6 text-lg font-medium text-gray-200"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          Loading {selectedRole?.title} view...
-        </motion.p>
-        <motion.p 
-          className="mt-2 text-sm text-gray-400 max-w-xs text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.7 }}
-          transition={{ delay: 0.4 }}
-        >
-          Preparing your personalized aviation safety interface
-        </motion.p>
-      </motion.div>
-    );
-  }
 
   return (
-    <div 
-      className={`min-h-screen bg-gray-950 transition-all duration-500 ${
-        isTransitioning ? "opacity-0 scale-95" : "opacity-100 scale-100"
-      }`}
-    >
+    <div className="min-h-screen bg-gray-950">
+    
       {/* Header */}
       <header className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -279,59 +219,67 @@ const RoleSelectionScreen = ({
           <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent my-8"></div>
         </div>
 
+
         {/* Role Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {filteredRoles.map(([roleKey, role]) => {
-            const isSelected = selectedRoleForTransition === roleKey;
             const isHovered = hoveredRole === roleKey;
 
             return (
-              <div
+              <button
                 key={roleKey}
-                onClick={() => handleRoleSelect(roleKey, role)}
+                onClick={() => handleRoleSelect(roleKey)}
                 onMouseEnter={() => setHoveredRole(roleKey)}
                 onMouseLeave={() => setHoveredRole(null)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleRoleSelect(roleKey, role);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-pressed={isSelected}
-                aria-label={`Select ${role.title} role`}
                 className={`
-                  group relative bg-gray-800/80 backdrop-blur-sm border rounded-2xl p-8 transition-all duration-300 cursor-pointer
-                  ${isSelected 
-                    ? 'border-cyan-500 shadow-2xl shadow-cyan-500/20 scale-[1.02]' 
-                    : 'border-gray-700/50 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10'
-                  }
-                  transform hover:-translate-y-1
+                  w-full group relative bg-gray-800/80 backdrop-blur-sm border rounded-2xl p-8 transition-all duration-300 cursor-pointer
+                  border-gray-700/50 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10
+                  transform hover:-translate-y-1 text-left
                 `}
               >
-                {/* Selection overlay */}
-                {isSelected && (
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-2xl animate-pulse"></div>
-                )}
 
                 <div className="relative z-10 h-full flex flex-col">
                   {/* Role Icon */}
                   <div
                     className={`
                       w-20 h-20 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 mx-auto
-                      ${
-                        isSelected
-                          ? 'bg-gradient-to-br from-cyan-500 to-blue-600 shadow-2xl shadow-cyan-500/30'
-                          : `bg-gradient-to-br ${role.color} shadow-lg ${isHovered ? 'scale-110' : ''}`
-                      }
+                      bg-gradient-to-br ${role.color} shadow-lg ${isHovered ? 'scale-110' : ''}
                     `}
                   >
-                    {React.cloneElement(role.icon, { 
-                      className: `w-10 h-10 text-white transition-transform duration-300 ${
-                        isHovered ? 'scale-110' : ''
-                      }` 
-                    })}
+                    {(() => {
+                      // Normalize various icon shapes:
+                      // - React element: <Plane />
+                      // - Component: Plane
+                      // - Object: { icon: <Plane /> } or { icon: Plane, label }
+                      const raw = role.icon;
+
+                      // Case 1: already a valid React element
+                      if (React.isValidElement(raw)) {
+                        return React.cloneElement(raw, {
+                          className: `w-10 h-10 text-white transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`
+                        });
+                      }
+
+                      // Case 2: object with an 'icon' that is an element
+                      if (raw && React.isValidElement(raw.icon)) {
+                        return React.cloneElement(raw.icon, {
+                          className: `w-10 h-10 text-white transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`
+                        });
+                      }
+
+                      // Case 3: component constructor either directly or in raw.icon
+                      const Comp = (raw && raw.icon) || raw || Users;
+                      if (typeof Comp === 'function') {
+                        return (
+                          <Comp className={`w-10 h-10 text-white transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`} />
+                        );
+                      }
+
+                      // Fallback to Users icon
+                      return (
+                        <Users className={`w-10 h-10 text-white transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`} />
+                      );
+                    })()}
                   </div>
 
                   {/* Role Information */}
@@ -349,39 +297,24 @@ const RoleSelectionScreen = ({
                     <div
                       className={`
                         flex items-center justify-center space-x-2 py-3 px-6 rounded-xl transition-all duration-300 w-full
-                        ${
-                          isSelected
-                            ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
-                            : 'bg-gray-700/50 text-gray-300 group-hover:bg-gray-700/70 group-hover:text-white border border-gray-600/50 group-hover:border-cyan-500/30'
-                        }
+                        bg-gray-700/50 text-gray-300 group-hover:bg-gray-700/70 group-hover:text-white border border-gray-600/50 group-hover:border-cyan-500/30
                       `}
                     >
-                      {isSelected ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span className="text-sm font-medium">
-                            Loading...
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-sm font-medium">
-                            Select Role
-                          </span>
-                          <svg 
-                            className={`w-4 h-4 transition-transform duration-200 ${isHovered ? 'translate-x-1' : ''}`} 
-                            fill="none" 
-                            viewBox="0 0 24 24" 
-                            stroke="currentColor"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </>
-                      )}
+                      <span className="text-sm font-medium">
+                        Select Role
+                      </span>
+                      <svg 
+                        className={`w-4 h-4 transition-transform duration-200 ${isHovered ? 'translate-x-1' : ''}`} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

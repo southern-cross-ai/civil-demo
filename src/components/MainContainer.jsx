@@ -487,7 +487,7 @@ const CivilAviationSafetyNavigator = () => {
         return (
           <RoleSelectionScreen 
             roles={roles}
-            onRoleSelect={handleRoleSelect}
+            onSelectRole={handleRoleSelect}
             onChatOpen={() => setIsChatOpen(true)}
           />
         );
